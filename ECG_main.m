@@ -1,14 +1,9 @@
 %% ELE339/ELE346 - DSP Coursework
-%  ECG signal filtering using ECGData1 (PVC patient)
-%  This main script produces every plot and number used in the report.
-%  It calls the supplied FIR.m and IIR.m filter-design functions.
-%
-%  Run section-by-section (Ctrl+Enter on each %% block) or all at once.
 % ------------------------------------------------------------------------
 
 clear; clc; close all;
 
-%% Step 1 - Load the data
+%% Step 1: Load the data
 load('ECGData1.mat');                  % gives origSig and noisySig
 origSig  = origSig(:);                 % force column vectors
 noisySig = noisySig(:);
@@ -20,7 +15,7 @@ t  = (0:N-1).'/fs;                     % time vector          [s]
 
 fprintf('Samples = %d, fs = %g Hz, duration = %g s\n', N, fs, T);
 
-%% Step 2 - Plot noisySig and origSig in mV vs seconds
+%% Step 2: Plot noisySig and origSig in mV vs seconds
 figure('Name','Step 2 - Time-domain signals','Color','w', ...
        'Position',[100 100 900 550]);
 
@@ -36,7 +31,7 @@ xlabel('Time (s)'); ylabel('Voltage (mV)');
 title('Original ECG signal -- origSig');
 xlim([0 T]); grid on; box off;
 
-%% Step 3 - Heart rate estimation (R-peak counting)
+%% Step 3: Heart rate estimation (R-peak counting)
 % Detect dominant positive peaks on the clean signal.  Use a 0.55*max
 % threshold and a minimum spacing of 0.30 s (i.e. <= 200 bpm).
 [pks, locs] = findpeaks(origSig, ...
@@ -58,14 +53,14 @@ legend('origSig', sprintf('R-peaks (%d beats in %g s)', nBeats, T), ...
        'Location','northeast'); legend boxoff;
 xlim([0 T]); grid on; box off;
 
-%% Step 4 - DFT of noisySig (one-sided amplitude spectrum)
+%% Step 4: DFT of noisySig (one-sided amplitude spectrum)
 X        = fft(noisySig);
 freq     = (0:N-1).' * (fs/N);
 half     = 1:floor(N/2)+1;
 freq_pos = freq(half);
 mag_pos  = abs(X(half)) * 2/N;          % single-sided amplitude
 
-%% Step 5 + 6 - Identify the 60 Hz mains-hum peak and pick the cut-off
+%% Step 5 & 6: Identify the 60 Hz mains-hum peak and pick the cut-off
 fMains       = 60;                      % US grid
 [~, idxMain] = min(abs(freq_pos - fMains));
 mainsAmp     = mag_pos(idxMain);
@@ -73,7 +68,7 @@ mainsAmp     = mag_pos(idxMain);
 fc           = 40;                      % chosen cut-off  [Hz]
 fc_norm      = fc/fs;                   % cycles / sample
 
-% --- Auto-detect the artificial high-frequency noise band ----------------
+% Auto-detect the artificial high-frequency noise band
 % Search above 70 Hz so we skip the cut-off region and the 60 Hz mains
 % line.  Smooth the spectrum (15-bin moving mean) to suppress single-bin
 % spikes, then take the largest contiguous run that exceeds 3 x median of
@@ -194,11 +189,11 @@ fprintf('\n--- Attenuation at 60 Hz ---\n');
 fprintf('FIR : %6.2f dB\n', attFIR);
 fprintf('IIR : %6.2f dB\n', attIIR);
 
-%% Step 9 - Apply the filters to noisySig (causal, like MATLAB's filter)
+%% Step 9: Apply the filters to noisySig (causal, like MATLAB's filter)
 y_fir = filter(Hd_fir, noisySig);
 y_iir = filter(Hd_iir, noisySig);
 
-%% Step 10 - Compare filtered signals with origSig
+%% Step 10: Compare filtered signals with origSig
 %  Plotting strategy
 %  -----------------
 %  - noisySig is shown as a thin, light tan line (#E6AE7E) in the
